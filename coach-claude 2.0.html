@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Coach Claude</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNvYWNoIENsYXVkZSIsCiAgInNob3J0X25hbWUiOiAiQ29hY2giLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBhMGEwYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwYTBhMGEiLAogICJpY29ucyI6IFtdCn0=">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a; --surface: #141414; --surface2: #1c1c1c;
+    --border: #262626; --border2: #333;
+    --text: #f0f0f0; --text2: #a0a0a0; --text3: #666;
+    --green: #34d399; --green2: #10b981; --green-bg: rgba(52,211,153,0.12);
+    --blue: #60a5fa; --yellow: #fbbf24; --red: #f87171;
+    --indigo: #818cf8; --cyan: #22d3ee; --amber: #f59e0b;
+    --font: 'DM Sans', -apple-system, sans-serif;
+    --radius: 12px; --radius-sm: 8px;
+  }
+
+  body {
+    font-family: var(--font); background: var(--bg); color: var(--text);
+    min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Header */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,10,0.92); backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    max-width: 520px; margin: 0 auto; width: 100%;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-logo {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 14px; color: #0a0a0a;
+  }
+  .header-title { font-size: 14px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-badge { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; }
+
+  /* Main content */
+  .main { max-width: 520px; margin: 0 auto; padding: 16px 16px 100px; }
+
+  /* Card */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 12px;
+  }
+
+  /* Section label */
+  .label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; }
+
+  /* Inputs */
+  .input-group { display: flex; flex-direction: column; gap: 5px; }
+  .input-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  input[type="text"], input[type="number"], input[type="date"], input[type="password"], select, textarea {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text);
+    font-family: var(--font); font-size: 14px; width: 100%; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--green); box-shadow: 0 0 0 3px rgba(52,211,153,0.15);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 18px; border-radius: var(--radius-sm); font-family: var(--font);
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-primary { background: var(--green); color: #0a0a0a; box-shadow: 0 4px 12px rgba(52,211,153,0.2); }
+  .btn-primary:hover { background: #4ade80; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .btn-full { width: 100%; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Grid helpers */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .flex-row { display: flex; gap: 10px; align-items: flex-end; }
+  .flex-1 { flex: 1; }
+  .space-y > * + * { margin-top: 12px; }
+
+  /* Progress Ring */
+  .ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .ring-value { font-size: 17px; font-weight: 800; margin-top: -4px; }
+  .ring-value small { font-size: 11px; font-weight: 500; color: var(--text3); }
+  .ring-label { font-size: 9px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Mini bar */
+  .mini-bar { height: 5px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  /* Chip / tag */
+  .chip {
+    display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 11px;
+    font-weight: 500; border: 1px solid var(--border); color: var(--text2);
+    cursor: pointer; transition: all 0.2s; background: var(--surface2);
+  }
+  .chip:hover { border-color: var(--text3); }
+  .chip.active { background: var(--green-bg); color: var(--green); border-color: rgba(52,211,153,0.3); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* Emoji selector */
+  .emoji-row { display: flex; gap: 8px; }
+  .emoji-btn {
+    flex: 1; padding: 8px; border-radius: var(--radius-sm); font-size: 20px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: var(--surface2); border: 1px solid var(--border);
+  }
+  .emoji-btn.active { background: var(--green-bg); border: 2px solid rgba(52,211,153,0.4); transform: scale(1.1); }
+
+  /* Chat */
+  .chat-area { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .chat-msg {
+    max-width: 85%; padding: 10px 14px; border-radius: 16px;
+    font-size: 13px; line-height: 1.55; white-space: pre-wrap; margin-bottom: 8px;
+  }
+  .chat-msg.user { margin-left: auto; background: var(--green-bg); color: #d1fae5; border: 1px solid rgba(52,211,153,0.2); }
+  .chat-msg.assistant { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .chat-input-row { display: flex; gap: 8px; margin-top: 10px; }
+  .chat-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; color: var(--text); font-family: var(--font);
+    font-size: 13px; outline: none;
+  }
+  .chat-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(52,211,153,0.12); }
+  .typing-dots { display: flex; gap: 5px; padding: 12px 14px; }
+  .typing-dot {
+    width: 7px; height: 7px; background: var(--green); border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  /* Bottom nav */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,10,10,0.95); backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .nav-inner { max-width: 520px; margin: 0 auto; display: flex; }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 10px 0; background: none; border: none; cursor: pointer;
+    color: var(--text3); transition: color 0.2s; font-family: var(--font);
+  }
+  .nav-btn.active { color: var(--green); }
+  .nav-btn .nav-icon { font-size: 16px; transition: transform 0.2s; }
+  .nav-btn.active .nav-icon { transform: scale(1.25); }
+  .nav-btn .nav-label { font-size: 8px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Food item row */
+  .food-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .food-item:last-child { border-bottom: none; }
+  .food-name { font-size: 13px; color: var(--text); }
+  .food-macros { font-size: 10px; color: var(--text3); }
+  .delete-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 12px; padding: 4px 8px; }
+  .delete-btn:hover { color: var(--red); }
+
+  /* Workout item */
+  .workout-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .workout-item:last-child { border-bottom: none; }
+
+  /* Weight bars */
+  .weight-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+  .weight-bar { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(to top, var(--green2), var(--green)); min-height: 8px; transition: height 0.5s; }
+
+  /* Stat box */
+  .stat-box { text-align: center; }
+  .stat-value { font-size: 20px; font-weight: 800; }
+  .stat-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* History list */
+  .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .history-item:last-child { border-bottom: none; }
+
+  /* Tabs content */
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* Coach fullscreen layout */
+  .coach-layout { display: flex; flex-direction: column; height: calc(100vh - 140px); }
+
+  /* Quick prompts */
+  .quick-prompts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .quick-prompt {
+    padding: 6px 12px; border-radius: 20px; font-size: 11px; font-family: var(--font);
+    background: var(--surface2); color: var(--text2); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .quick-prompt:hover { border-color: rgba(52,211,153,0.3); color: var(--green); }
+
+  /* Settings overlay */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .overlay-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; max-width: 420px; width: 100%;
+  }
+  .hidden { display: none !important; }
+
+  /* Streak */
+  .streak-num { font-size: 32px; font-weight: 900; color: var(--green); line-height: 1; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">C</div>
+    <span class="header-title">Coach Claude</span>
+  </div>
+  <div class="header-badge" id="headerGoal"></div>
+</div>
+
+<!-- Copy Success Toast -->
+<div id="copyToast" style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#0a0a0a;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;z-index:300;box-shadow:0 4px 20px rgba(52,211,153,0.3);">Copied to clipboard! Now paste in Claude</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div id="tab-dashboard" class="tab active">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;">
+      <div>
+        <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.5px;" id="dashGreeting">Hey Caiden</h2>
+        <p style="font-size:13px;color:var(--text3);margin-top:2px;" id="dashDate"></p>
+      </div>
+      <div style="text-align:right;">
+        <div class="streak-num" id="dashStreak">0</div>
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;">day streak</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Today's Macros</div>
+      <div style="display:flex;justify-content:space-around;" id="dashRings"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">Exercises Today</div>
+        <div style="font-size:24px;font-weight:800;margin-top:4px;" id="dashExercises">0</div>
+        <div id="dashExerciseList" style="margin-top:6px;"></div>
+      </div>
+      <div class="card">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">Current Weight</div>
+        <div style="font-size:24px;font-weight:800;margin-top:4px;" id="dashWeight">—</div>
+        <div id="dashWeightDelta" style="font-size:12px;margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <div class="card" id="dashWellnessCard" style="display:none;">
+      <div class="label">Today's Wellness</div>
+      <div class="grid-3" id="dashWellness"></div>
+    </div>
+
+    <div class="card" id="dashTrendCard" style="display:none;">
+      <div class="label">Weight Trend (7d)</div>
+      <div class="weight-bars" id="dashTrendBars"></div>
+    </div>
+  </div>
+
+  <!-- ═══ FOOD ═══ -->
+  <div id="tab-food" class="tab">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h2 style="font-size:20px;font-weight:800;">Food Log</h2>
+      <input type="date" id="foodDate" class="input-label" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text2);font-size:12px;" />
+    </div>
+
+    <div class="card">
+      <div class="grid-2" style="margin-bottom:10px;">
+        <div class="input-group"><label class="input-label">Food</label><input type="text" id="foodName" placeholder="Chicken breast" /></div>
+        <div class="input-group"><label class="input-label">Meal</label>
+          <select id="foodMeal"><option>Breakfast</option><option selected>Lunch</option><option>Dinner</option><option>Snack</option></select>
+        </div>
+      </div>
+      <div class="grid-4" style="margin-bottom:12px;">
+        <div class="input-group"><label class="input-label">Cal</label><input type="number" id="foodCal" placeholder="0" /></div>
+        <div class="input-group"><label class="input-label">Protein</label><input type="number" id="foodP" placeholder="0" /></div>
+        <div class="input-group"><label class="input-label">Carbs</label><input type="number" id="foodC" placeholder="0" /></div>
+        <div class="input-group"><label class="input-label">Fat</label><input type="number" id="foodF" placeholder="0" /></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addFood()">+ Log Food</button>
+    </div>
+
+    <div class="card" id="foodTotalsCard"></div>
+    <div id="foodList"></div>
+  </div>
+
+  <!-- ═══ WORKOUT ═══ -->
+  <div id="tab-workout" class="tab">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h2 style="font-size:20px;font-weight:800;">Workout Log</h2>
+      <input type="date" id="workoutDate" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text2);font-size:12px;" />
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-secondary flex-1 workout-type-btn active" data-type="strength" onclick="setWorkoutType('strength')">Strength</button>
+        <button class="btn btn-secondary flex-1 workout-type-btn" data-type="cardio" onclick="setWorkoutType('cardio')">Cardio</button>
+      </div>
+      <div class="chip-row" id="exercisePresets" style="margin-bottom:12px;"></div>
+      <div class="input-group" style="margin-bottom:10px;"><label class="input-label">Exercise</label><input type="text" id="workoutExercise" placeholder="Or type custom..." /></div>
+      <div id="strengthFields" class="grid-3" style="margin-bottom:12px;">
+        <div class="input-group"><label class="input-label">Sets</label><input type="number" id="workoutSets" placeholder="3" /></div>
+        <div class="input-group"><label class="input-label">Reps</label><input type="number" id="workoutReps" placeholder="10" /></div>
+        <div class="input-group"><label class="input-label">Weight (lbs)</label><input type="number" id="workoutWeight" placeholder="135" /></div>
+      </div>
+      <div id="cardioFields" class="grid-2 hidden" style="margin-bottom:12px;">
+        <div class="input-group"><label class="input-label">Duration (min)</label><input type="number" id="workoutDuration" placeholder="30" /></div>
+        <div class="input-group"><label class="input-label">Distance/Notes</label><input type="text" id="workoutNotes" placeholder="3 miles" /></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addWorkout()">+ Log Exercise</button>
+    </div>
+
+    <div id="workoutList"></div>
+  </div>
+
+  <!-- ═══ WEIGHT ═══ -->
+  <div id="tab-weight" class="tab">
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:14px;">Weight Tracker</h2>
+    <div class="card">
+      <div class="flex-row">
+        <div class="flex-1 input-group"><label class="input-label">Weight (lbs)</label><input type="number" id="weightVal" step="0.1" placeholder="182.0" /></div>
+        <div class="flex-1 input-group"><label class="input-label">Date</label><input type="date" id="weightDate" /></div>
+        <button class="btn btn-primary" onclick="addWeight()">Log</button>
+      </div>
+    </div>
+    <div class="card" id="weightTrendCard" style="display:none;">
+      <div class="label">Trend</div>
+      <div class="weight-bars" id="weightTrendBars"></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-top:4px;">
+        <span id="weightTrendStart"></span><span id="weightTrendEnd"></span>
+      </div>
+    </div>
+    <div class="card" id="weightHistoryCard" style="display:none;">
+      <div class="label">History</div>
+      <div id="weightHistory" style="max-height:250px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- ═══ WELLNESS ═══ -->
+  <div id="tab-wellness" class="tab">
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:14px;">Wellness Check</h2>
+    <div class="card space-y">
+      <div class="grid-2">
+        <div class="input-group"><label class="input-label">Sleep (hours)</label><input type="number" id="wellSleep" step="0.5" placeholder="7.5" /></div>
+        <div class="input-group"><label class="input-label">Screen Time (hours)</label><input type="number" id="wellScreen" step="0.5" placeholder="4" /></div>
+        <div class="input-group"><label class="input-label">Water (cups)</label><input type="number" id="wellWater" placeholder="8" /></div>
+        <div class="input-group"><label class="input-label">Steps</label><input type="number" id="wellSteps" placeholder="8000" /></div>
+      </div>
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">Energy Level</div>
+        <div class="emoji-row" id="energyRow"></div>
+      </div>
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">Stress Level</div>
+        <div class="emoji-row" id="stressRow"></div>
+      </div>
+      <div>
+        <div class="input-label" style="margin-bottom:6px;">Mood</div>
+        <div class="emoji-row" id="moodRow"></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveWellness()">Save Today's Wellness</button>
+    </div>
+    <div id="wellnessHistory"></div>
+  </div>
+
+  <!-- ═══ COACH ═══ -->
+  <div id="tab-coach" class="tab">
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:6px;">Coach Claude</h2>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:16px;">Generate a data summary, copy it, and paste it into Claude for personalized coaching.</p>
+
+    <div class="card">
+      <div class="label">What do you want coaching on?</div>
+      <div class="input-group" style="margin-bottom:12px;">
+        <textarea id="coachQuestion" rows="3" placeholder="e.g. How are my macros today? What should I eat for dinner? Give me a push day workout. Am I on track this week?"></textarea>
+      </div>
+      <div class="quick-prompts" style="margin-bottom:14px;">
+        <button class="quick-prompt" onclick="document.getElementById('coachQuestion').value='How are my macros today? What should I eat to hit my targets?'">Macro check</button>
+        <button class="quick-prompt" onclick="document.getElementById('coachQuestion').value='Give me a full workout for today based on what I\'ve been doing recently.'">Workout plan</button>
+        <button class="quick-prompt" onclick="document.getElementById('coachQuestion').value='Give me a weekly progress report. Grade my nutrition, training, and wellness. What should I adjust?'">Weekly report</button>
+        <button class="quick-prompt" onclick="document.getElementById('coachQuestion').value='What should I eat for dinner to hit my remaining macros?'">Dinner ideas</button>
+        <button class="quick-prompt" onclick="document.getElementById('coachQuestion').value='How is my sleep, screen time, and overall wellness? What should I improve?'">Wellness check</button>
+        <button class="quick-prompt" onclick="document.getElementById('coachQuestion').value='Am I on track for my recomp goal? Should I adjust my calories or macros?'">Goal check</button>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="generateAndCopy()" style="font-size:14px;padding:14px;">📋 Generate & Copy to Clipboard</button>
+    </div>
+
+    <div class="card" id="coachPreview" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="label" style="margin:0;">Preview</div>
+        <button class="btn btn-secondary" onclick="copyAgain()" style="padding:5px 12px;font-size:11px;">Copy Again</button>
+      </div>
+      <div id="coachPreviewText" style="font-size:11px;color:var(--text3);max-height:300px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;font-family:monospace;"></div>
+    </div>
+
+    <div class="card" style="background:rgba(52,211,153,0.06);border-color:rgba(52,211,153,0.15);">
+      <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px;">How it works</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">
+        1. Pick a question or type your own<br>
+        2. Hit the green button — it bundles ALL your logged data<br>
+        3. Go to <strong style="color:var(--text)">claude.ai</strong> and paste into a new chat<br>
+        4. Claude responds with personalized coaching using your real numbers<br><br>
+        <span style="color:var(--text3)">Tip: Bookmark your Claude chat so you can paste into the same conversation each time for continuity.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ GOALS ═══ -->
+  <div id="tab-goals" class="tab">
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:14px;">Profile & Goals</h2>
+    <div class="card space-y">
+      <div class="grid-2">
+        <div class="input-group"><label class="input-label">Name</label><input type="text" id="goalName" /></div>
+        <div class="input-group"><label class="input-label">Age</label><input type="number" id="goalAge" /></div>
+        <div class="input-group"><label class="input-label">Height</label><input type="text" id="goalHeight" /></div>
+        <div class="input-group"><label class="input-label">Weight (lbs)</label><input type="number" id="goalWeight" /></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Goal</label>
+        <select id="goalGoal">
+          <option value="recomp">Recomp (lose fat, keep muscle)</option>
+          <option value="cut">Cut (aggressive fat loss)</option>
+          <option value="bulk">Lean Bulk (build muscle)</option>
+          <option value="maintain">Maintain</option>
+        </select>
+      </div>
+      <div class="grid-2">
+        <div class="input-group"><label class="input-label">Daily Calories</label><input type="number" id="goalCal" /></div>
+        <div class="input-group"><label class="input-label">Deficit/Surplus</label><input type="number" id="goalDeficit" /></div>
+      </div>
+      <div class="grid-3">
+        <div class="input-group"><label class="input-label">Protein (g)</label><input type="number" id="goalP" /></div>
+        <div class="input-group"><label class="input-label">Carbs (g)</label><input type="number" id="goalC" /></div>
+        <div class="input-group"><label class="input-label">Fat (g)</label><input type="number" id="goalF" /></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveGoals()">Save Profile</button>
+    </div>
+    <div class="card">
+      <div class="label">Quick Reference</div>
+      <div id="goalRef" style="font-size:13px;color:var(--text2);"></div>
+    </div>
+    <div class="card">
+      <div class="label">Danger Zone</div>
+      <button class="btn btn-danger" onclick="if(confirm('Reset ALL data? Cannot be undone.')){localStorage.removeItem('coach-claude-pwa');location.reload();}">Reset All Data</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Nav -->
+<div class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="nav-icon">◉</span><span class="nav-label">Dash</span></button>
+    <button class="nav-btn" data-tab="food" onclick="switchTab('food')"><span class="nav-icon">◎</span><span class="nav-label">Food</span></button>
+    <button class="nav-btn" data-tab="workout" onclick="switchTab('workout')"><span class="nav-icon">▲</span><span class="nav-label">Workout</span></button>
+    <button class="nav-btn" data-tab="weight" onclick="switchTab('weight')"><span class="nav-icon">◇</span><span class="nav-label">Weight</span></button>
+    <button class="nav-btn" data-tab="wellness" onclick="switchTab('wellness')"><span class="nav-icon">●</span><span class="nav-label">Wellness</span></button>
+    <button class="nav-btn" data-tab="coach" onclick="switchTab('coach')"><span class="nav-icon">◆</span><span class="nav-label">Coach</span></button>
+    <button class="nav-btn" data-tab="goals" onclick="switchTab('goals')"><span class="nav-icon">☰</span><span class="nav-label">Goals</span></button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════════
+const STORE = 'coach-claude-pwa';
+const KEY_STORE = 'coach-claude-apikey';
+
+const defaultProfile = { name:"Caiden", age:22, height:"6'0\"", weight:182, goal:"recomp", calories:2090, protein:182, carbs:180, fat:58, deficit:300 };
+const defaultData = { profile:{...defaultProfile}, food:[], workouts:[], weights:[], wellness:[], chatHistory:[] };
+
+let D = loadData();
+
+function loadData() {
+  try { const r = localStorage.getItem(STORE); if(r){ const p=JSON.parse(r); return {...defaultData,...p, profile:{...defaultProfile,...p.profile}}; } } catch(e){}
+  return JSON.parse(JSON.stringify(defaultData));
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(D)); } catch(e){} }
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+// ═══════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelector(`.nav-btn[data-tab="${id}"]`).classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='food') renderFood();
+  if(id==='workout') renderWorkouts();
+  if(id==='weight') renderWeight();
+  if(id==='wellness') renderWellness();
+  if(id==='goals') renderGoals();
+  if(id==='coach') renderCoach();
+}
+
+// ═══════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════
+function getApiKey() { return ''; }
+
+// ═══════════════════════════════════════════════
+//  SVG RING
+// ═══════════════════════════════════════════════
+function makeRing(val, max, label, color, size=85) {
+  const pct = Math.min(val/max,1)*100;
+  const r = (size-12)/2, circ = 2*Math.PI*r, offset = circ - (pct/100)*circ;
+  return `<div class="ring-wrap">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset 0.7s"/>
+    </svg>
+    <div class="ring-value">${val}<small>/${max}</small></div>
+    <div class="ring-label">${label}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════
+function getTodayTotals(date) {
+  const f = D.food.filter(x=>x.date===date);
+  return f.reduce((a,x)=>({ cal:a.cal+(+x.calories||0), p:a.p+(+x.protein||0), c:a.c+(+x.carbs||0), f:a.f+(+x.fat||0) }), {cal:0,p:0,c:0,f:0});
+}
+
+function getStreak() {
+  let count=0, d=new Date();
+  while(true) {
+    const ds=d.toISOString().split('T')[0];
+    if(D.food.some(f=>f.date===ds)||D.workouts.some(w=>w.date===ds)) { count++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return count;
+}
+
+function renderDashboard() {
+  const t = todayStr(), tot = getTodayTotals(t), p = D.profile;
+  document.getElementById('dashGreeting').textContent = 'Hey '+p.name;
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('dashStreak').textContent = getStreak();
+  document.getElementById('dashRings').innerHTML =
+    makeRing(tot.cal,p.calories,'Calories','#34d399') +
+    makeRing(tot.p,p.protein,'Protein','#60a5fa') +
+    makeRing(tot.c,p.carbs,'Carbs','#fbbf24') +
+    makeRing(tot.f,p.fat,'Fat','#f87171');
+
+  const tw = D.workouts.filter(w=>w.date===t);
+  document.getElementById('dashExercises').textContent = tw.length;
+  document.getElementById('dashExerciseList').innerHTML = tw.slice(0,3).map(w=>`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${w.exercise}</div>`).join('') + (tw.length>3?`<div style="font-size:10px;color:var(--text3);">+${tw.length-3} more</div>`:'');
+
+  const wts = [...D.weights].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('dashWeight').textContent = wts.length>0 ? wts[0].weight+' lbs' : '—';
+  if(wts.length>=2) {
+    const diff = (wts[0].weight - wts[1].weight).toFixed(1);
+    document.getElementById('dashWeightDelta').innerHTML = `<span style="color:${diff<0?'var(--green)':'var(--red)'}">${diff>0?'+':''}${diff} lbs</span>`;
+  }
+
+  const well = D.wellness.find(w=>w.date===t);
+  const wc = document.getElementById('dashWellnessCard');
+  if(well) {
+    wc.style.display='block';
+    document.getElementById('dashWellness').innerHTML = `
+      <div class="stat-box"><div class="stat-value" style="color:var(--indigo)">${well.sleep||'—'}</div><div class="stat-label">Sleep (hrs)</div></div>
+      <div class="stat-box"><div class="stat-value" style="color:var(--amber)">${well.screenTime||'—'}</div><div class="stat-label">Screen (hrs)</div></div>
+      <div class="stat-box"><div class="stat-value" style="color:var(--cyan)">${well.water||'—'}</div><div class="stat-label">Water (cups)</div></div>`;
+  } else { wc.style.display='none'; }
+
+  const recent7 = wts.slice(0,7).reverse();
+  const tc = document.getElementById('dashTrendCard');
+  if(recent7.length>1) {
+    tc.style.display='block';
+    const vals=recent7.map(w=>w.weight), mn=Math.min(...vals)-0.5, mx=Math.max(...vals)+0.5, rng=mx-mn||1;
+    document.getElementById('dashTrendBars').innerHTML = recent7.map(w=>
+      `<div class="weight-bar" title="${w.date}: ${w.weight}" style="height:${((w.weight-mn)/rng)*60+10}px"></div>`
+    ).join('');
+  } else { tc.style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════
+//  FOOD
+// ═══════════════════════════════════════════════
+function renderFood() {
+  const date = document.getElementById('foodDate').value || todayStr();
+  const items = D.food.filter(f=>f.date===date);
+  const tot = getTodayTotals(date);
+  const p = D.profile;
+
+  document.getElementById('foodTotalsCard').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span class="label" style="margin:0;">Daily Totals</span>
+      <span style="font-size:13px;font-weight:700;color:var(--green);">${tot.cal} / ${p.calories} cal</span>
+    </div>
+    ${[{l:'Protein',v:tot.p,m:p.protein,c:'var(--blue)'},{l:'Carbs',v:tot.c,m:p.carbs,c:'var(--yellow)'},{l:'Fat',v:tot.f,m:p.fat,c:'var(--red)'}].map(x=>`
+      <div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+          <span style="color:var(--text3)">${x.l}</span><span style="color:var(--text2)">${x.v}g / ${x.m}g</span>
+        </div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:${Math.min(x.v/x.m*100,100)}%;background:${x.c}"></div></div>
+      </div>
+    `).join('')}`;
+
+  const meals = ['Breakfast','Lunch','Dinner','Snack'];
+  document.getElementById('foodList').innerHTML = meals.map(meal => {
+    const mi = items.filter(f=>f.meal===meal);
+    if(!mi.length) return '';
+    return `<div class="card"><div class="label">${meal}</div>${mi.map(f=>`
+      <div class="food-item">
+        <div><div class="food-name">${f.name}</div><div class="food-macros">${f.calories}cal · ${f.protein}P · ${f.carbs}C · ${f.fat}F</div></div>
+        <button class="delete-btn" onclick="deleteFood('${f.id}')">✕</button>
+      </div>`).join('')}</div>`;
+  }).join('');
+}
+
+function addFood() {
+  const name = document.getElementById('foodName').value.trim();
+  if(!name) return;
+  D.food.push({
+    id:uid(), date:document.getElementById('foodDate').value||todayStr(),
+    name, meal:document.getElementById('foodMeal').value,
+    calories:document.getElementById('foodCal').value||'0',
+    protein:document.getElementById('foodP').value||'0',
+    carbs:document.getElementById('foodC').value||'0',
+    fat:document.getElementById('foodF').value||'0',
+  });
+  save(); renderFood();
+  document.getElementById('foodName').value='';
+  document.getElementById('foodCal').value='';
+  document.getElementById('foodP').value='';
+  document.getElementById('foodC').value='';
+  document.getElementById('foodF').value='';
+}
+
+function deleteFood(id) { D.food = D.food.filter(f=>f.id!==id); save(); renderFood(); }
+
+// ═══════════════════════════════════════════════
+//  WORKOUT
+// ═══════════════════════════════════════════════
+let workoutType = 'strength';
+const presets = {
+  strength: ['Bench Press','Squat','Deadlift','OHP','Barbell Row','Pull-ups','Dips','Lat Pulldown','Leg Press','Curl'],
+  cardio: ['Running','Cycling','Swimming','Rowing','Jump Rope','Stair Climber','Elliptical']
+};
+
+function setWorkoutType(type) {
+  workoutType = type;
+  document.querySelectorAll('.workout-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type===type));
+  document.getElementById('strengthFields').classList.toggle('hidden', type!=='strength');
+  document.getElementById('cardioFields').classList.toggle('hidden', type!=='cardio');
+  renderPresets();
+}
+
+function renderPresets() {
+  document.getElementById('exercisePresets').innerHTML = presets[workoutType].map(p =>
+    `<span class="chip${document.getElementById('workoutExercise').value===p?' active':''}" onclick="document.getElementById('workoutExercise').value='${p}';renderPresets();">${p}</span>`
+  ).join('');
+}
+
+function renderWorkouts() {
+  const date = document.getElementById('workoutDate').value || todayStr();
+  const items = D.workouts.filter(w=>w.date===date);
+  renderPresets();
+
+  if(!items.length) { document.getElementById('workoutList').innerHTML=''; return; }
+  const totalVol = items.filter(w=>w.type==='strength').reduce((a,w)=>a+(+w.sets||0)*(+w.reps||0)*(+w.weight||0),0);
+  document.getElementById('workoutList').innerHTML = `<div class="card">
+    <div class="label">Today's Session — ${items.length} exercises</div>
+    ${items.map(w=>`<div class="workout-item">
+      <div><div style="font-size:13px;font-weight:500;color:var(--text)">${w.exercise}</div>
+        <div style="font-size:10px;color:var(--text3)">${w.type==='strength'?w.sets+'×'+w.reps+' @ '+w.weight+' lbs':w.duration+' min'+(w.notes?' · '+w.notes:'')}</div>
+      </div>
+      <button class="delete-btn" onclick="deleteWorkout('${w.id}')">✕</button>
+    </div>`).join('')}
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);">Total Volume: ${totalVol.toLocaleString()} lbs</div>
+  </div>`;
+}
+
+function addWorkout() {
+  const exercise = document.getElementById('workoutExercise').value.trim();
+  if(!exercise) return;
+  const entry = { id:uid(), date:document.getElementById('workoutDate').value||todayStr(), exercise, type:workoutType };
+  if(workoutType==='strength') {
+    entry.sets=document.getElementById('workoutSets').value||'0';
+    entry.reps=document.getElementById('workoutReps').value||'0';
+    entry.weight=document.getElementById('workoutWeight').value||'0';
+  } else {
+    entry.duration=document.getElementById('workoutDuration').value||'0';
+    entry.notes=document.getElementById('workoutNotes').value||'';
+  }
+  D.workouts.push(entry); save(); renderWorkouts();
+  document.getElementById('workoutExercise').value='';
+  document.getElementById('workoutSets').value='';
+  document.getElementById('workoutReps').value='';
+  document.getElementById('workoutWeight').value='';
+  document.getElementById('workoutDuration').value='';
+  document.getElementById('workoutNotes').value='';
+}
+
+function deleteWorkout(id) { D.workouts=D.workouts.filter(w=>w.id!==id); save(); renderWorkouts(); }
+
+// ═══════════════════════════════════════════════
+//  WEIGHT
+// ═══════════════════════════════════════════════
+function renderWeight() {
+  const sorted = [...D.weights].sort((a,b)=>b.date.localeCompare(a.date));
+  const recent = sorted.slice(0,30).reverse();
+
+  const tc = document.getElementById('weightTrendCard');
+  if(recent.length>1) {
+    tc.style.display='block';
+    const vals=recent.map(w=>w.weight), mn=Math.min(...vals)-0.5, mx=Math.max(...vals)+0.5, rng=mx-mn||1;
+    document.getElementById('weightTrendBars').innerHTML = recent.map(w=>
+      `<div class="weight-bar" title="${w.date}: ${w.weight} lbs" style="height:${((w.weight-mn)/rng)*65+10}px"></div>`
+    ).join('');
+    document.getElementById('weightTrendStart').textContent = recent[0].date.slice(5);
+    document.getElementById('weightTrendEnd').textContent = recent[recent.length-1].date.slice(5);
+  } else { tc.style.display='none'; }
+
+  const hc = document.getElementById('weightHistoryCard');
+  if(sorted.length>0) {
+    hc.style.display='block';
+    document.getElementById('weightHistory').innerHTML = sorted.slice(0,20).map(w=>
+      `<div class="history-item"><span style="color:var(--text3)">${w.date}</span><span style="font-weight:600">${w.weight} lbs</span></div>`
+    ).join('');
+  } else { hc.style.display='none'; }
+}
+
+function addWeight() {
+  const val = document.getElementById('weightVal').value;
+  const date = document.getElementById('weightDate').value || todayStr();
+  if(!val) return;
+  D.weights = D.weights.filter(w=>w.date!==date);
+  D.weights.push({ id:uid(), date, weight:+val });
+  save(); renderWeight();
+  document.getElementById('weightVal').value='';
+}
+
+// ═══════════════════════════════════════════════
+//  WELLNESS
+// ═══════════════════════════════════════════════
+let wellnessState = { energy:'3', stress:'3', mood:'3' };
+
+function renderEmojiRow(containerId, emojis, key) {
+  document.getElementById(containerId).innerHTML = emojis.map((e,i)=>
+    `<div class="emoji-btn${wellnessState[key]===(i+1)+''?' active':''}" onclick="wellnessState.${key}='${i+1}';renderWellness();">${e}</div>`
+  ).join('');
+}
+
+function renderWellness() {
+  const existing = D.wellness.find(w=>w.date===todayStr());
+  if(existing && !document.getElementById('wellSleep').value) {
+    document.getElementById('wellSleep').value = existing.sleep||'';
+    document.getElementById('wellScreen').value = existing.screenTime||'';
+    document.getElementById('wellWater').value = existing.water||'';
+    document.getElementById('wellSteps').value = existing.steps||'';
+    wellnessState = { energy:existing.energy||'3', stress:existing.stress||'3', mood:existing.mood||'3' };
+  }
+  renderEmojiRow('energyRow', ['😴','😐','🙂','😊','⚡'], 'energy');
+  renderEmojiRow('stressRow', ['😌','🙂','😐','😰','🤯'], 'stress');
+  renderEmojiRow('moodRow', ['😢','😕','😐','😊','😄'], 'mood');
+
+  const recent = [...D.wellness].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  document.getElementById('wellnessHistory').innerHTML = recent.length ? `<div class="card"><div class="label">Recent Wellness</div>${recent.map(w=>
+    `<div class="history-item"><span style="color:var(--text3);font-size:12px;">${w.date}</span>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--text2);">
+        <span>💤${w.sleep}h</span><span>📱${w.screenTime}h</span><span>💧${w.water}</span><span>👣${w.steps}</span>
+      </div></div>`
+  ).join('')}</div>` : '';
+}
+
+function saveWellness() {
+  D.wellness = D.wellness.filter(w=>w.date!==todayStr());
+  D.wellness.push({
+    id:uid(), date:todayStr(),
+    sleep:document.getElementById('wellSleep').value,
+    screenTime:document.getElementById('wellScreen').value,
+    water:document.getElementById('wellWater').value,
+    steps:document.getElementById('wellSteps').value,
+    ...wellnessState
+  });
+  save(); renderWellness();
+}
+
+// ═══════════════════════════════════════════════
+//  COACH (Copy to Claude)
+// ═══════════════════════════════════════════════
+let lastGeneratedMsg = '';
+
+function buildCoachMessage() {
+  const p=D.profile, t=todayStr(), tot=getTodayTotals(t);
+  const todayFood = D.food.filter(f=>f.date===t);
+  const recentWts = [...D.weights].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  const recentWk = [...D.workouts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+  const recentWell = [...D.wellness].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  const weekFood = D.food.filter(f=>{ const d=new Date(f.date),n=new Date(); return (n-d)/86400000<=7; });
+  const question = document.getElementById('coachQuestion').value.trim() || 'Give me a full coaching update based on my data.';
+
+  return `You are my personal trainer and nutritionist (Coach Claude). Be direct, motivating, and specific. Reference my real numbers below. Give me actionable advice.
+
+MY QUESTION: ${question}
+
+═══ MY PROFILE ═══
+Name: ${p.name} | Age: ${p.age} | Height: ${p.height} | Weight: ${p.weight} lbs
+Goal: ${p.goal} | Daily Targets: ${p.calories} cal, ${p.protein}g protein, ${p.carbs}g carbs, ${p.fat}g fat (${p.deficit} cal deficit from TDEE of ${p.calories+p.deficit})
+
+═══ TODAY'S FOOD (${t}) ═══
+${todayFood.length ? todayFood.map(f=>'• '+f.meal+': '+f.name+' ('+f.calories+' cal, '+f.protein+'g P, '+f.carbs+'g C, '+f.fat+'g F)').join('\n') : 'Nothing logged yet.'}
+TOTALS: ${tot.cal} cal, ${tot.p}g P, ${tot.c}g C, ${tot.f}g F
+REMAINING: ${p.calories-tot.cal} cal, ${p.protein-tot.p}g P, ${p.carbs-tot.c}g C, ${p.fat-tot.f}g F
+
+═══ RECENT WEIGHTS (last 7) ═══
+${recentWts.length ? recentWts.map(w=>w.date+': '+w.weight+' lbs').join('\n') : 'None logged'}
+
+═══ RECENT WORKOUTS (last 15) ═══
+${recentWk.length ? recentWk.map(w=>w.date+' — '+w.exercise+' '+(w.type==='strength'?w.sets+'×'+w.reps+' @ '+w.weight+' lbs':w.duration+' min'+(w.notes?' ('+w.notes+')':''))).join('\n') : 'None logged'}
+
+═══ RECENT WELLNESS (last 7 days) ═══
+${recentWell.length ? recentWell.map(w=>w.date+': Sleep='+w.sleep+'h, Screen='+w.screenTime+'h, Water='+w.water+' cups, Steps='+w.steps+', Energy='+w.energy+'/5, Stress='+w.stress+'/5, Mood='+w.mood+'/5').join('\n') : 'None logged'}
+
+═══ WEEKLY SUMMARY ═══
+Meals logged this week: ${weekFood.length}
+Avg daily calories (7d): ${weekFood.length ? Math.round(weekFood.reduce((a,f)=>a+(+f.calories||0),0)/7) : 0}`;
+}
+
+function generateAndCopy() {
+  lastGeneratedMsg = buildCoachMessage();
+  navigator.clipboard.writeText(lastGeneratedMsg).then(()=>{
+    showToast();
+    document.getElementById('coachPreview').style.display = 'block';
+    document.getElementById('coachPreviewText').textContent = lastGeneratedMsg;
+  }).catch(()=>{
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = lastGeneratedMsg;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+    document.getElementById('coachPreview').style.display = 'block';
+    document.getElementById('coachPreviewText').textContent = lastGeneratedMsg;
+  });
+}
+
+function copyAgain() {
+  if(lastGeneratedMsg) {
+    navigator.clipboard.writeText(lastGeneratedMsg).then(showToast).catch(()=>{});
+  }
+}
+
+function showToast() {
+  const t = document.getElementById('copyToast');
+  t.style.display = 'block';
+  setTimeout(()=>{ t.style.display='none'; }, 2500);
+}
+
+function renderCoach() {
+  // Nothing dynamic to render on load — the HTML is static
+}
+
+// ═══════════════════════════════════════════════
+//  GOALS
+// ═══════════════════════════════════════════════
+function renderGoals() {
+  const p = D.profile;
+  document.getElementById('goalName').value = p.name;
+  document.getElementById('goalAge').value = p.age;
+  document.getElementById('goalHeight').value = p.height;
+  document.getElementById('goalWeight').value = p.weight;
+  document.getElementById('goalGoal').value = p.goal;
+  document.getElementById('goalCal').value = p.calories;
+  document.getElementById('goalDeficit').value = p.deficit;
+  document.getElementById('goalP').value = p.protein;
+  document.getElementById('goalC').value = p.carbs;
+  document.getElementById('goalF').value = p.fat;
+
+  document.getElementById('goalRef').innerHTML = `
+    <div class="history-item"><span>TDEE (estimated)</span><span style="color:var(--text)">${p.calories+p.deficit} cal</span></div>
+    <div class="history-item"><span>Target Calories</span><span style="color:var(--green);font-weight:600">${p.calories} cal</span></div>
+    <div class="history-item"><span>Protein per lb</span><span style="color:var(--text)">${p.weight?(p.protein/p.weight).toFixed(1):'—'}g/lb</span></div>
+    <div class="history-item"><span>Macro Cal Check</span><span style="color:var(--text)">${p.protein*4+p.carbs*4+p.fat*9} cal</span></div>`;
+}
+
+function saveGoals() {
+  D.profile = {
+    name:document.getElementById('goalName').value,
+    age:+document.getElementById('goalAge').value,
+    height:document.getElementById('goalHeight').value,
+    weight:+document.getElementById('goalWeight').value,
+    goal:document.getElementById('goalGoal').value,
+    calories:+document.getElementById('goalCal').value,
+    deficit:+document.getElementById('goalDeficit').value,
+    protein:+document.getElementById('goalP').value,
+    carbs:+document.getElementById('goalC').value,
+    fat:+document.getElementById('goalF').value,
+  };
+  save(); renderGoals();
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+document.getElementById('foodDate').value = todayStr();
+document.getElementById('workoutDate').value = todayStr();
+document.getElementById('weightDate').value = todayStr();
+document.getElementById('headerGoal').textContent = D.profile.goal;
+renderDashboard();
+</script>
+</body>
+</html>
