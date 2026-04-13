@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0a">
 <title>Coach Claude</title>
-<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNvYWNoIENsYXVkZSIsCiAgInNob3J0X25hbWUiOiAiQ29hY2giLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBhMGEwYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwYTBhMGEiLAogICJpY29ucyI6IFtdCn0=">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Coach">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,7 +41,11 @@
     position: sticky; top: 0; z-index: 100;
     background: rgba(10,10,10,0.92); backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(255,255,255,0.04);
-    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    display: flex; align-items: center; justify-content: space-between;
     max-width: 520px; margin: 0 auto; width: 100%;
   }
   .header-left { display: flex; align-items: center; gap: 10px; }
@@ -52,7 +59,12 @@
   .header-badge { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; }
 
   /* Main content */
-  .main { max-width: 520px; margin: 0 auto; padding: 16px 16px 100px; }
+  .main {
+    max-width: 520px; margin: 0 auto;
+    padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
 
   /* Card */
   .card {
@@ -157,8 +169,13 @@
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
     background: rgba(10,10,10,0.95); backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,255,255,0.04);
+    padding-bottom: env(safe-area-inset-bottom);
   }
-  .nav-inner { max-width: 520px; margin: 0 auto; display: flex; }
+  .nav-inner {
+    max-width: 520px; margin: 0 auto; display: flex;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
   .nav-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
     padding: 10px 0; background: none; border: none; cursor: pointer;
@@ -223,9 +240,38 @@
 
   /* Streak */
   .streak-num { font-size: 32px; font-weight: 900; color: var(--green); line-height: 1; }
+
+  /* Toast safe area */
+  #copyToast { top: calc(20px + env(safe-area-inset-top)) !important; }
+
+  /* Splash screen */
+  #splash {
+    display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 9999;
+    flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    transition: opacity 0.4s ease;
+  }
+  .splash-icon {
+    width: 90px; height: 90px; border-radius: 22px;
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 46px; color: #0a0a0a;
+    font-family: var(--font);
+    box-shadow: 0 12px 40px rgba(52,211,153,0.35);
+  }
+  .splash-title { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; text-align: center; }
+  .splash-sub { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 2.5px; text-align: center; margin-top: 4px; }
 </style>
 </head>
 <body>
+
+<!-- Splash Screen (shown on PWA launch) -->
+<div id="splash">
+  <div class="splash-icon">C</div>
+  <div>
+    <div class="splash-title">Coach Claude</div>
+    <div class="splash-sub">Fitness Companion</div>
+  </div>
+</div>
 
 <!-- Header -->
 <div class="header">
@@ -487,6 +533,20 @@
 </div>
 
 <script>
+// ═══════════════════════════════════════════════
+//  SPLASH SCREEN (PWA standalone mode only)
+// ═══════════════════════════════════════════════
+(function() {
+  if (window.navigator.standalone) {
+    const s = document.getElementById('splash');
+    s.style.display = 'flex';
+    setTimeout(function() {
+      s.style.opacity = '0';
+      setTimeout(function() { s.remove(); }, 400);
+    }, 1100);
+  }
+})();
+
 // ═══════════════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════════════
