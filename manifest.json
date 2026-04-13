@@ -2,7 +2,7 @@
   "name": "Coach Claude",
   "short_name": "Coach",
   "description": "Your personal fitness and nutrition coaching companion",
-  "start_url": "./index.html",
+  "start_url": "./coach-claude%202.0.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
