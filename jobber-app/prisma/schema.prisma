@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  jobs      Job[]
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zip       String?
+  notes     String?
+  tags      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  quotes    Quote[]
+  jobs      Job[]
+  invoices  Invoice[]
+}
+
+model Quote {
+  id         String     @id @default(cuid())
+  number     String     @unique
+  clientId   String
+  client     Client     @relation(fields: [clientId], references: [id])
+  status     String     @default("draft")
+  title      String
+  notes      String?
+  lineItems  LineItem[]
+  subtotal   Float      @default(0)
+  tax        Float      @default(0)
+  total      Float      @default(0)
+  validUntil DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  job        Job?
+}
+
+model Job {
+  id           String     @id @default(cuid())
+  number       String     @unique
+  clientId     String
+  client       Client     @relation(fields: [clientId], references: [id])
+  quoteId      String?    @unique
+  quote        Quote?     @relation(fields: [quoteId], references: [id])
+  assignedToId String?
+  assignedTo   User?      @relation(fields: [assignedToId], references: [id])
+  status       String     @default("scheduled")
+  title        String
+  description  String?
+  scheduledAt  DateTime?
+  completedAt  DateTime?
+  notes        String?
+  lineItems    LineItem[]
+  invoice      Invoice?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model LineItem {
+  id          String   @id @default(cuid())
+  quoteId     String?
+  quote       Quote?   @relation(fields: [quoteId], references: [id])
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  invoiceId   String?
+  invoice     Invoice? @relation(fields: [invoiceId], references: [id])
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Float    @default(0)
+  discount    Float    @default(0)
+  total       Float    @default(0)
+}
+
+model Invoice {
+  id        String    @id @default(cuid())
+  number    String    @unique
+  clientId  String
+  client    Client    @relation(fields: [clientId], references: [id])
+  jobId     String?   @unique
+  job       Job?      @relation(fields: [jobId], references: [id])
+  status    String    @default("draft")
+  title     String
+  notes     String?
+  lineItems LineItem[]
+  subtotal  Float     @default(0)
+  tax       Float     @default(0)
+  total     Float     @default(0)
+  dueDate   DateTime?
+  paidAt    DateTime?
+  payments  Payment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  amount    Float
+  method    String   @default("card")
+  notes     String?
+  paidAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+}
